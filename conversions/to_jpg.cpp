@@ -13,7 +13,6 @@
 // limitations under the License.
 #include <stddef.h>
 #include <string.h>
-#include "esp_spiram.h"
 #include "esp_attr.h"
 #include "soc/efuse_reg.h"
 #include "esp_heap_caps.h"
@@ -22,12 +21,23 @@
 #include "jpge.h"
 #include "yuv.h"
 
+#include "esp_system.h"
+#if ESP_IDF_VERSION_MAJOR >= 4 // IDF 4+
+#if CONFIG_IDF_TARGET_ESP32 // ESP32/PICO-D4
+#include "esp32/spiram.h"
+#else 
+#error Target CONFIG_IDF_TARGET is not supported
+#endif
+#else // ESP32 Before IDF 4.0
+#include "esp_spiram.h"
+#endif
+
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)
 #include "esp32-hal-log.h"
 #define TAG ""
 #else
 #include "esp_log.h"
-static const char* TAG = "to_bmp";
+static const char* TAG = "to_jpg";
 #endif
 
 static void *_malloc(size_t size)
@@ -205,7 +215,7 @@ bool fmt2jpg(uint8_t *src, size_t src_len, uint16_t width, uint16_t height, pixf
 {
     //todo: allocate proper buffer for holding JPEG data
     //this should be enough for CIF frame size
-    int jpg_buf_len = 24*1024;
+    int jpg_buf_len = 64*1024;
 
 
     uint8_t * jpg_buf = (uint8_t *)_malloc(jpg_buf_len);
